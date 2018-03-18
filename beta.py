@@ -3,7 +3,7 @@
 # Email:13163385579@163.com
 # TIME:2018-03-07  13:31
 # NAME:assetPricing1-beta.py
-
+from din import read_src_new
 from dout import *
 from zht.utils.mathu import get_inter_index, reg
 
@@ -93,4 +93,18 @@ def usingMonthlyData():
         name=str(int(int(length[:-1])/12))+'Y'
         betadf.to_csv(os.path.join(DATA_PATH, name + '.csv'))
         # r2df.to_csv(os.path.join(DATA_PATH, name + '_r2.csv'))
+
+def get_Mbeta():
+    tbname='BETA_Mbeta'
+    df=read_src_new(tbname)
+    #计算beta时，对所有股票都选择沪深市场综合回报率为市场回报率
+    df=df[['Stkcd','Trdmnt','Betavals']]
+    df.columns=['sid','t','beta']
+    df=df.set_index(['t','sid'])
+    df=df.unstack('sid')
+    df.to_csv(os.path.join(DATA_PATH,'beta.csv'))
+
+
+
+
 

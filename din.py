@@ -4,13 +4,15 @@
 # TIME:2018-02-11  16:23
 # NAME:assetPricing-din.py
 
+import numpy as np
 
 import pandas as pd
 from config import *
-
+from dout import read_df
 import os
 
 from zht.utils.dfu import filterDf
+import statsmodels.formula.api as sm
 
 
 def _readFromSrc(tbname):
@@ -126,7 +128,7 @@ there is no filter query for market data,but for those
 financial data,the filter query is needed.
 '''
 
-def get_stockRetM(recal=False):
+def get_stockRetM():
     '''
     monthly stock return with dividend
 
@@ -224,6 +226,11 @@ def get_stockCloseY():
     df.to_csv(path)
 
 def get_ff3():
+    '''
+    from resset data
+
+    :return:
+    '''
     query1='Exchflg == 0' #所有交易所
     query2='Mktflg == A'#只考虑A股
 
@@ -234,7 +241,118 @@ def get_ff3():
     df.columns=['rp','smb','hml']
     df.to_csv(os.path.join(DATA_PATH,'ff3.csv'))
 
+def get_ff3_gta():
+    direc=r'D:\zht\database\quantDb\sourceData\gta\data_20180314\source\csv'
+    df=pd.read_csv(os.path.join(direc,'STK_MKT_ThrfacMonth.csv'),index_col=0)
+    #P9709 全部A股市场包含沪深A股和创业板
+    #流通市值加权
+    df=df[df['MarkettypeID']=='P9709'][['TradingMonth','RiskPremium1','SMB1','HML1']]
+    df.columns=['t','rp','smb','hml']
+    df=df.set_index('t')
+    df.to_csv(os.path.join(DATA_PATH,'ff3_gta.csv'))
 
+
+def get_ffc_gta():
+    direc=r'D:\zht\database\quantDb\sourceData\gta\data_20180314\source\csv'
+    df=pd.read_csv(os.path.join(direc,'STK_MKT_FivefacMonth.csv'),index_col=0)
+    #P9709 全部A股市场包含沪深A股和创业板
+    #流通市值加权
+    #2*3 投资组合
+    df=df[(df['MarkettypeID']=='P9709') & (df['Portfolios']==1)][
+        ['TradingMonth','RiskPremium1','SMB1','HML1','RMW1','CMA1']]
+    df.columns=['t','rp','smb','hml','rmw','cma']
+    df=df.set_index('t')
+    df.to_csv(os.path.join(DATA_PATH,'ff5_gta.csv'))
+
+def get_ffc_gta():
+    direc = r'D:\zht\database\quantDb\sourceData\gta\data_20180314\source\csv'
+    df = pd.read_csv(os.path.join(direc, 'STK_MKT_CarhartFourFactors.csv'), index_col=0)
+    # P9709 全部A股市场包含沪深A股和创业板
+    # 流通市值加权
+    df = df[df['MarkettypeID'] == 'P9709'][
+        ['TradingMonth', 'RiskPremium1', 'SMB1', 'HML1', 'UMD2']]
+    df.columns = ['t', 'rp', 'smb', 'hml', 'mom']
+    df = df.set_index('t')
+    df.to_csv(os.path.join(DATA_PATH, 'ffc_gta.csv'))
+
+#TODO：liquidity of GTA
+def get_liquidity_ps():
+    direc = r'D:\zht\database\quantDb\sourceData\gta\data_20180314\source\csv'
+    df = pd.read_csv(os.path.join(direc, 'Liq_PSM_M.csv'), index_col=0)
+    #MarketType==21   综合A股和创业板
+    # 流通市值加权，but on the page 310,Bali use total market capilization
+    condition1=(df['MarketType']==21)
+    condition2=(df['ST']==1)#delete the ST stocks
+
+    df = df[condition1 & condition2][['Trdmnt','AggPS_os']]
+    df.columns=['t','rm']
+    df=df.set_index('t')
+
+    df.index=pd.to_datetime(df.index).to_period('M').to_timestamp('M')
+
+
+    df=df.sort_index()
+    df['rm_ahead']=df['rm'].shift(1)
+    df['delta_rm']=df['rm']-df['rm'].shift(1)
+    df['delta_rm_ahead']=df['rm_ahead']-df['rm_ahead'].shift(1)
+    #df.groupby(lambda x:x.year).apply(lambda df:df.shape[0])
+    #TODO: we don't know the length of window to regress.In this place,we use the five years history
+    def regr(df):
+        if df.shape[0]>30:
+            return sm.ols(formula='delta_rm ~ delta_rm_ahead + rm_ahead',data=df).fit().resid[0]
+        else:
+            return np.NaN
+
+    window=60 # not exact 5 years
+    lm=pd.Series([regr(df.loc[:month][-60:]) for month in df.index],index=df.index)
+    lm.name='lm'
+
+    ret = read_df('stockRetM', freq='M')
+    rf = read_df('rfM', freq='M')
+    eret = ret.sub(rf['rf'], axis=0)
+    eret = eret.stack()
+    eret.index.names=['t','sid']
+    eret.name='eret'
+
+    ff3_new=read_df('ff3','M')
+    ff3=read_df('ff3_gta','M')
+    factors=pd.concat([ff3,lm],axis=1)
+
+    comb=eret.to_frame().join(factors)
+
+    def _for_one_month(df):
+        if df.shape[0] >=30:
+            return sm.ols(formula='eret ~ rp + smb + hml + lm', data=df).fit().params['lm']
+        else:
+            return np.NaN
+
+    def _get_result(df):
+        thresh=30#30 month
+        if df.shape[0]>thresh:
+            values=[]
+            sid=df.index[0]
+            df = df.reset_index(level='sid', drop=True)
+            months=df.index.tolist()[thresh:]
+            for month in months:
+                subdf=df.loc[:month][-60:]
+                subdf=subdf.dropna()
+                # df=df.reset_index(level='sid',drop=True).loc[:month].last(window)
+                values.append(_for_one_month(subdf))
+            print(sid)
+            return pd.Series(values,index=months)
+
+    result=comb.groupby('sid').apply(_get_result)
+    result.unstack('sid').to_csv(os.path.join(DATA_PATH,'liqBeta.csv'))
+
+# get_liquidity_ps()
+
+
+
+
+def read_src_new(tbname):
+    direc=r'D:\zht\database\quantDb\sourceData\gta\data_20180314\source\csv'
+    df=pd.read_csv(os.path.join(direc,tbname+'.csv'),index_col=0)
+    return df
 
 # TODO:sets the format of the index before put them into processedcsv,with pd.to_datetime .to_period()
 
@@ -252,6 +370,5 @@ def run():
     get_stockCloseY()
     get_ff3()
 
-get_stockCloseY()
 
 

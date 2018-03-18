@@ -31,6 +31,7 @@ class Dataset:
         eret = ret.sub(rf['rf'], axis=0)
         eret=eret.stack()
         eret.name='eret'
+        #TODO: create a df to store eret
 
         all_indicators=[ind for l_values in self.information.values()
                         for ind in l_values]
@@ -56,7 +57,7 @@ class Dataset:
         mktRetM = read_df('mktRetM', freq='M')
         mktRetM.index.name = 't'
 
-        data=data.join(mktRetM)
+        data=data.join(mktRetM)#combine multiIndex dataframe with single index dataframe
         #truncate the sample
         return data[data.index.get_level_values('t').year>=1996]
 

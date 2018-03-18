@@ -70,6 +70,11 @@ class CrossSection:
 
 
 class Univariate(CrossSection):
+    '''
+    TODO:add a tool to analyse the relationship between different characteristics,
+    as table II of Pan, Li, Ya Tang, and Jianguo Xu. “Speculative Trading and Stock Returns.” Review of Finance 20, no. 5 (August 2016): 1835–65. https://doi.org/10.1093/rof/rfv059.
+
+    '''
     q=10
 
     def __init__(self,factor,path):
@@ -140,6 +145,27 @@ class Univariate(CrossSection):
 
         # TODO:In fact,the count is not exactly the number of stocks to calculate the weighted return
         # TODO:as some stocks will be deleted due to the missing of weights.
+
+    def _get_port_data(self,indicator):
+        groupid=dataset.get_by_indicators([indicator])
+        groupid['g']=groupid.groupby('t',group_keys=False).apply(
+            lambda df:pd.qcut(df[indicator],self.q,
+                              labels=[indicator+str(i) for i in range(1,self.q+1)])
+        )
+        return groupid
+
+    def portfolio_characteristics(self,sortedIndicator,otherIndicators):
+        '''
+        as table 12.3 panel A
+        :param sortedIndicator:
+        :param otherIndicators:
+        :return:
+        '''
+        groupid=self._get_port_data(sortedIndicator)
+        comb=dataset.get_by_indicators(otherIndicators)
+        comb=pd.concat([groupid,comb],axis=1)
+        characteristics_avg=comb.groupby(['t','g']).mean().groupby('g').mean()
+        characteristics_avg.to_csv(os.path.join(self.path,'portfolio characteristics.csv'))
 
     def portfolio_analysis(self):
         all_indicators=list(set(self.indicators+['mktCap','eret','mktRetM']))
@@ -426,8 +452,6 @@ class Univariate_mom(Univariate):
         self.portfolio_analysis_with_ff3_alpha()
         self.univariate_portfolio_analysis_with_k_month_ahead_returns()
         self.fm()
-
-
 
 
 class Bivariate(CrossSection):
