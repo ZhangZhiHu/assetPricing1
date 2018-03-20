@@ -13,6 +13,7 @@ import os
 
 from zht.utils.dfu import filterDf
 import statsmodels.formula.api as sm
+from pandas.tseries.offsets import MonthEnd
 
 
 def _readFromSrc(tbname):
@@ -344,8 +345,29 @@ def get_liquidity_ps():
     result=comb.groupby('sid').apply(_get_result)
     result.unstack('sid').to_csv(os.path.join(DATA_PATH,'liqBeta.csv'))
 
-# get_liquidity_ps()
 
+def get_hxz4():
+    '''
+    D:\app\python27\zht\researchTopics\assetPricing\calFactors.py\get_hxz4Factors()
+
+    :return:
+    '''
+    direc=r'E:\a\quantDb\researchTopics\assetPricing\hxz4\factor'
+
+    fns=['rsmb','ria','rroe']
+
+    dfs=[]
+    for fn in fns:
+        df=pd.read_csv(os.path.join(direc,fn+'.csv'),index_col=0)
+        df.index.name='t'
+        df.columns=[fn]
+        dfs.append(df)
+    df.head()
+    comb=pd.concat(dfs,axis=1)
+    comb.index=pd.to_datetime(comb.index)+MonthEnd()
+    ff3=read_df('ff3_gta','M')
+    comb['rp']=ff3['rp']
+    comb.to_csv(os.path.join(DATA_PATH,'hxz4.csv'))
 
 
 
@@ -353,6 +375,19 @@ def read_src_new(tbname):
     direc=r'D:\zht\database\quantDb\sourceData\gta\data_20180314\source\csv'
     df=pd.read_csv(os.path.join(direc,tbname+'.csv'),index_col=0)
     return df
+
+def get_ff3D():
+    tbname='STK_MKT_ThrfacDay'
+    df=read_src_new(tbname)
+    condition1=df['MarkettypeID']=='P9707'
+    # P9709 全部A股市场包含沪深A股和创业板
+    # 流通市值加权
+    df = df[condition1][
+        ['TradingDate', 'RiskPremium1', 'SMB1', 'HML1']]
+    df.columns = ['t', 'rp', 'smb', 'hml']
+    df = df.set_index('t')
+    df.to_csv(os.path.join(DATA_PATH, 'ff3D.csv'))
+
 
 # TODO:sets the format of the index before put them into processedcsv,with pd.to_datetime .to_period()
 

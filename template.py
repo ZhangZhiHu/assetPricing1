@@ -126,6 +126,8 @@ class Univariate(CrossSection):
         # corrsAvg.to_csv(os.path.join(self.path, 'corr_spearman.csv'))
 
     def persistence(self):
+        #TODO: Table II of Asness, Clifford S., Andrea Frazzini, and Lasse Heje Pedersen. “Quality Minus Junk.” SSRN Scholarly Paper. Rochester, NY: Social Science Research Network, June 5, 2017. https://papers.ssrn.com/abstract=2312432.
+
         perdf=pd.DataFrame()
         for indicator in self.indicators:
             per=assetPricing.persistence(self.df[indicator].unstack(),

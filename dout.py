@@ -6,7 +6,7 @@
 import os
 import pandas as pd
 from config import *
-from pandas.tseries.offsets import MonthEnd
+from pandas.tseries.offsets import MonthEnd,Day
 
 
 def read_df(fn, freq,repository=DATA_PATH):
@@ -17,8 +17,12 @@ def read_df(fn, freq,repository=DATA_PATH):
     :return:
     '''
     df=pd.read_csv(os.path.join(repository, fn + '.csv'), index_col=0)
-    df.index=pd.to_datetime(df.index)+MonthEnd()
-    # df.index=pd.to_datetime(df.index).to_period(freq).to_timestamp(freq)
+    if freq=='M':
+        df.index=pd.to_datetime(df.index)+MonthEnd()
+        # df.index=pd.to_datetime(df.index).to_period(freq).to_timestamp(freq)
+    elif freq=='D':
+        df.index=pd.to_datetime(df.index)
+
     df.index.name='t'
     return df
 
