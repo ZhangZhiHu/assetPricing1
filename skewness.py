@@ -70,7 +70,7 @@ def _for_one_stock(x, months, history, thresh, type_func):
     print(sid)
     return pd.Series(values,index=months)
 
-def _cal(comb, freq, dict, type_func, fn):
+def monthly_cal(comb, freq, dict, type_func, fn):
     values = []
     names = []
     for history, thresh in dict.items():
@@ -89,13 +89,13 @@ def cal_skewnewss():
 
     combD,combM=_get_comb()
 
-    _cal(combD, 'D', dictD, _skew, 'skewD')
-    _cal(combD, 'D', dictD, _coskew, 'coskewD')
-    _cal(combD, 'D', dictD, _idioskew, 'idioskewD')
+    monthly_cal(combD, 'D', dictD, _skew, 'skewD')
+    monthly_cal(combD, 'D', dictD, _coskew, 'coskewD')
+    monthly_cal(combD, 'D', dictD, _idioskew, 'idioskewD')
 
-    _cal(combM, 'M', dictM, _skew, 'skewM')
-    _cal(combM, 'M', dictM, _coskew, 'coskewM')
-    _cal(combM, 'M', dictM, _idioskew, 'idioskewM')
+    monthly_cal(combM, 'M', dictM, _skew, 'skewM')
+    monthly_cal(combM, 'M', dictM, _coskew, 'coskewM')
+    monthly_cal(combM, 'M', dictM, _idioskew, 'idioskewM')
 
 if __name__=='__main__':
     cal_skewnewss()
