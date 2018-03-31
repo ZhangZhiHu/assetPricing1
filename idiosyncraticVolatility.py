@@ -11,6 +11,7 @@ import statsmodels.formula.api as sm
 from skewness import monthly_cal
 
 def _get_comb():
+    #TODO:use eretD rather than eretD
     retD = read_df('stockRetD', freq='D')
     retD = retD.stack()
     retD.index.names = ['t', 'sid']
@@ -20,7 +21,7 @@ def _get_comb():
     mktD.columns=['mkt']
     combD = retD.to_frame().join(ff3D)
     combD=combD.join(mktD)
-
+    #TODO: use eretM
     retM = read_df('stockRetM', freq='M')
     retM = retM.stack()
     retM.index.names = ['t', 'sid']

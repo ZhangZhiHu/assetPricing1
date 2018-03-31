@@ -149,11 +149,8 @@ def get_stockRetM():
 def get_mktRetM():
     newName='mktRetM'
     path=os.path.join(DATA_PATH, newName + '.csv')
-
     tbname = 'TRD_Cnmont'
-
     indVar = 'Trdmnt'
-
     targetVar = 'Cmretwdos'  # 考虑现金红利再投资的综合日市场回报率(流通市值加权平均法)
     q1 = 'Markettype == 21'  # 21=综合A股和创业板
 
@@ -253,7 +250,7 @@ def get_ff3_gta():
     df.to_csv(os.path.join(DATA_PATH,'ff3_gta.csv'))
 
 
-def get_ffc_gta():
+def get_ff5_gta():
     direc=r'D:\zht\database\quantDb\sourceData\gta\data_20180314\source\csv'
     df=pd.read_csv(os.path.join(direc,'STK_MKT_FivefacMonth.csv'),index_col=0)
     #P9709 全部A股市场包含沪深A股和创业板

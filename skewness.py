@@ -10,6 +10,7 @@ import statsmodels.formula.api as sm
 
 
 def _get_comb():
+    #TODO:use eretD
     retD = read_df('stockRetD', freq='D')
     retD = retD.stack()
     retD.index.names = ['t', 'sid']
@@ -20,7 +21,7 @@ def _get_comb():
     mktD['mkt_square']=mktD['mkt']**2
     combD = retD.to_frame().join(ff3D)
     combD=combD.join(mktD)
-
+    #TODO:use eretM
     retM = read_df('stockRetM', freq='M')
     retM = retM.stack()
     retM.index.names = ['t', 'sid']
@@ -38,6 +39,7 @@ def _skew(subx):
     return subx['ret'].skew()
 
 def _coskew(subx):
+    #TODO: eret ,rp rather than
     coskew=sm.ols('ret ~ mkt + mkt_square',data=subx).fit().params['mkt_square']
     return coskew
 

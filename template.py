@@ -350,7 +350,6 @@ class Beta(Univariate):
     def __init__(self):
         super().__init__(BETA,BETA_PATH)
 
-
 class Size(Univariate):
     def __init__(self):
         super().__init__(SIZE,SIZE_PATH)
@@ -732,8 +731,7 @@ class Value_size_bivariate(Bivariate):
 
 class Mom_bivariate(Bivariate):
     #TODO: table 11.6
-    raise NotImplementedError
-
+    pass
 
 def chapter10():
     Value_beta_bivariate().run()
@@ -761,7 +759,10 @@ if __name__=='__main__':
 
     # chapter10()
 
-    chapter11()
+    # chapter11()
+
+    Beta().run()
+
 
 
 
